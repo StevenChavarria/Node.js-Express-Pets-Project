@@ -1,0 +1,27 @@
+{
+  "name": "pets",
+  "version": "0.1.0",
+  "description": "adoption site for pets",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StevenChavarria/Node.js-Express-Pets-Project.git"
+  },
+  "keywords": [
+    "Node.js",
+    "Express",
+    "MongoDB"
+  ],
+  "author": "Steven",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/StevenChavarria/Node.js-Express-Pets-Project/issues"
+  },
+  "homepage": "https://github.com/StevenChavarria/Node.js-Express-Pets-Project#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
