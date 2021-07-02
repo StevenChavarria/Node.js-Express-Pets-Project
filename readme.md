@@ -1,6 +1,6 @@
 # Taller de JavaScript
 
-![Resultado](/images/result.png)
+![Resultado](/result.png)
 
 Autor: Eduardo Oviedo Blanco
 
