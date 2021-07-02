@@ -1,6 +1,6 @@
 # Taller de JavaScript
 
-![Resultado](/result.png)
+![Resultado](/images/result.png)
 
 Autor: Eduardo Oviedo Blanco
 
@@ -266,6 +266,282 @@ loadSomePets();
 ```
 39. Ejecute nuevamente el server y vea la consola.
 Analise los resultados
+
+### Base de datos
+
+40. Cree una cuenta en MongoDB Atlas. https://www.mongodb.com/cloud/atlas
+
+41. Una vez dentro, cree un Cluster, una base de datos llamada "*PETS*" y una colección "*pets*".
+
+42. Ingrese a Database Access y cree un usuario, por ejemplo "petsUser" con la contraseña "petsPassword", asegúrese de que sea un usuario temporal si va a compartir su string de conección.
+
+43. Ya creada la colección y el usuario, regrese al inicio, haciendo click en Atlas, en el menú superior y seleccione. 
+
+44. Presione el botón "CONNECT" y "Connet your application".
+
+45. Guarde su connection string.
+
+46. Instale el MongoDB driver al proyecto.
+```bash
+npm i mongodb
+```
+
+47. En la raiz del proyecto, cree un folder llamado "database".
+
+48. Cree un archivo llamado "mongodbUtil.js", con el siguiente código.
+```js
+const { MongoClient } = require('mongodb');
+const uri = "mongodb+srv://<user>:<password>@cluster0.ysuo2.mongodb.net/PETS?retryWrites=true&w=majority";
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+let pets;
+
+function connect(callback) {
+  client.connect(err => {
+    console.info('MongoDB connected!');
+    pets = client.db("PETS").collection("pets");
+    return callback(err);
+  });
+}
+
+function disconnect(callback) {
+  client.close();
+  callback();
+}
+
+function getPetsCollection() {
+  return pets;
+}
+
+module.exports = {
+  connect,
+  disconnect,
+  getPetsCollection,
+};
+```
+49. Asegúrese de cambiar el usuario y password en el connection string.
+
+50. En app.js, agregue el módulo al server.
+```js
+const mongodb = require('./database/mongodbUtil');
+```
+
+51. Ahora después de la configuración y antes de las rutas, agregue el llamado a conectar.
+```js
+mongodb.connect(err => {
+  if (err) console.error(err);
+});
+```
+
+52. Ahora en la ruta "pets.js" agregue el import al módulo.
+```js
+const mongodb = require('../database/mongodbUtil');
+```
+
+53. Cambie el endpoint get de la ruta '/', por el siguiente.
+```js
+router.get('/', function(req, res) {
+  const page = req.query.page ?? 1;
+  const limit = req.query.limit ?? 3;
+
+  let pets = mongodb.getPetsCollection();
+
+  pets.find().skip((page -1) * limit).limit(page * limit).toArray((err, result) => {
+    if (err) {
+      res.sendStatus(500);
+    } else if (result.length === 0) {
+      res.sendStatus(404);
+    } else {
+      res.json(result);
+    }
+  });
+});
+```
+
+54. Modifique el endpoint del post a la ruta '/' en pets.js de la siguiente manera.
+```js
+router.post('/', function(req, res) {
+  const name = req.body.name;
+  const age = req.body.age;
+  const species = req.body.species;
+  const race = req.body.race;
+  const picture = req.body.picture;
+  const description = req.body.description;
+
+  const pet = new Pet(name, age, species, race, picture, description);
+  
+  let pets = mongodb.getPetsCollection();
+
+  pets.insertOne(pet);
+
+  res.sendStatus(200);
+});
+```
+
+55. Ejecute el server nuevamente y verifique las funcionalidades. Si es necesario agregar imágenes nuevas, puede hacerlo.
+
+56. Agregue el siguiente require.
+```js
+const ObjectId = require('mongodb').ObjectId; 
+```
+
+56. Modifique el endpoint del get a '/:name' en pets.js.
+```js
+router.get('/:id', function(req, res) {
+  const id = req.params.id;
+
+  let pets = mongodb.getPetsCollection();
+
+  const pet = pets.find({_id: new ObjectId(id)}).toArray((err, result) => {
+    if (err) {
+      res.sendStatus(500);
+    } else if (result.length === 0) {
+      res.sendStatus(404);
+    } else {
+      res.json(result);
+    }
+  });
+});
+```
+
+57. Verifique los cambios.
+
+58. Modifique el endpoint del delete de la siguiente manera.
+```js
+router.delete('/:id', function(req, res){
+  console.log(1);
+  const id = req.params.id;
+
+  let pets = mongodb.getPetsCollection();
+
+  pets.deleteOne({_id: new ObjectId(id)});
+
+  res.sendStatus(200);
+});
+```
+
+59. Verifique que todos los endpoints funcionen correctamente.
+
+### UI
+
+60. Agregue el siguiente html al body del home.html.
+```html
+  <div class="sidebar">
+    <h2>Add a PET</h2>
+    <form method="POST" action="/pets">
+      <label for="name">Name:</label>
+      <input type="text" name="name" id="name">
+
+      <label for="age">Age:</label>
+      <input type="number" name="age" id="age">
+
+      <label for="species">Species:</label>
+      <select name="species" id="species">
+        <option value="cat">Cat</option>
+        <option value="dog">Dog</option>
+      </select>
+
+      <label for="race">Race:</label>
+      <input type="text" name="race" id="race">
+
+      <label for="picture">Picture:</label>
+      <input type="text" name="picture" id="picture">
+
+      <label for="description">Description:</label>
+      <textarea id="description" name="description" rows="4"></textarea>
+
+      <br>
+      <input type="submit" value="Save">
+    </form>
+  </div>
+  <div class="content">
+    <header><h1>PETS.com</h1></header>
+    <div class="pets">
+      <!-- Pets goes here -->
+    </div>
+    <footer>Footer Content — PETS.com 2021</footer>
+  </div>
+```
+
+61. En el directorio público, cree un folder "css" y dentro un archivo "home.css" con el siguiente código.
+```css
+body {
+  display: grid;
+  grid-template-columns: minmax(150px, 25%) 1fr;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar {
+  height: 100%;
+  background: lightpink;
+  padding: 2rem;
+}
+
+.content {
+  padding: 2rem;
+}
+
+body {
+  font-family: system-ui, serif;
+}
+
+form{
+  display: flex;
+  flex-direction: column;
+}
+
+img {
+  max-width: 25em;
+}
+```
+
+62. Asegúrese de incluir el archivo al head del html.
+```html
+  <title>PETS</title>
+  <link rel="stylesheet" href="css/home.css">
+```
+
+63. En la ruta de pets, cambie la última línea en el post por la siguiente.
+```javascript
+res.redirect('/');
+```
+
+64. Elimine el arreglo de pets del archivo de la ruta, ya no es necesario.
+
+65. Finalmente cambie el javascript de home.js por el siguiente.
+```javascript
+const dogs = document.querySelector('.pets');
+
+function loadSomePets() {
+  fetch('/pets?page=1&limit=5')
+    .then(response => response.json())
+    .then(data => {
+      console.log(data);
+      data.forEach(pet => {
+        const img = document.createElement('img');
+        img.src = `images/${pet.picture}`;
+        
+        const name = document.createElement('p');
+        name.textContent = pet.name;
+
+        const description = document.createElement('p');
+        description.textContent = pet.description;
+
+        const hr = document.createElement('hr');
+
+        dogs.appendChild(img);
+        dogs.appendChild(name);
+        dogs.appendChild(description);
+        dogs.appendChild(hr);
+      });
+    });
+}
+
+loadSomePets();
+```
+
+66. Ejecute la aplicación.
 
 ## Conclusión
 
