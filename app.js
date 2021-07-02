@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const mongodb = require('./database/mongodbUtils');
 const app = express();
 const port = 3000;
 
@@ -10,6 +11,9 @@ const pets = require('./routes/pets.js');
 app.use(express.static('public'))
 app.use(express.urlencoded({ extended: true }));
 
+mongodb.connect(err => {
+    if (err) console.error(err);
+});
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname,'views/home.html'));
